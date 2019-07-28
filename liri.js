@@ -37,7 +37,7 @@ inquire
                 break;
 
             case 'Search for a movie':
-                //TODO: Search for movie
+                movieSearch();
                 break;
 
             case 'Auto-suggestion':
@@ -100,6 +100,7 @@ function spotifyThisSong() {
         ])
         .then((res) => {
             const song = res.song === '' ? 'The Sign' : res.song;
+
             spotify.search(
                 {
                     type: 'track',
@@ -134,6 +135,59 @@ function spotifyThisSong() {
                     });
                 }
             );
+        });
+}
+
+function movieSearch() {
+    inquire
+        .prompt([
+            {
+                message: 'What movie would you like to know about?',
+                name: 'movie',
+                type: 'input',
+            },
+        ])
+        .then((res) => {
+            const movie = res.movie === '' ? 'Mr. Nobody' : res.movie;
+            const apiCall = `http://www.omdbapi.com/?apikey=trilogy&t=${movie}`;
+
+            axios.get(apiCall).then((res) => {
+                const data = res.data;
+
+                const title = data.Title;
+                const year = data.Year;
+                let rating;
+                const country = data.Country;
+                const lang = data.Language;
+                const plot = data.Plot;
+                const actors = data.Actors;
+
+                data.Ratings.forEach((source) => {
+                    if (source.Source === 'Rotten Tomatoes') {
+                        rating = source.Value;
+                    }
+                });
+
+                // Creates fallback if Rotten Tomatoes rating is not listed
+                if (rating === '') {
+                    data.Ratings.forEach((source) => {
+                        if (source.Source === 'Internet Movie Database') {
+                            rating = source.Value;
+                        }
+                    });
+                }
+
+                const movieInfo = {};
+                movieInfo['Title'] = title;
+                movieInfo['Release'] = year;
+                movieInfo['Rating'] = rating;
+                movieInfo['Actors'] = actors;
+                movieInfo['Language'] = lang;
+                movieInfo['Country'] = country;
+
+                console.table(movieInfo);
+                console.log(`Plot: ${plot}`); // Moved to own line for formatting
+            });
         });
 }
 
