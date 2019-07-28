@@ -3,7 +3,11 @@ require('dotenv').config();
 const colors = require('colors');
 const axios = require('axios');
 const keys = require('./keys');
-// const spotify = require(keys.spotify);
+const Spotify = require('node-spotify-api');
+const spotify = new Spotify({
+    id: keys.spotify.id,
+    secret: keys.spotify.secret,
+});
 const inquire = require('inquirer');
 const moment = require('moment');
 
@@ -29,7 +33,7 @@ inquire
                 break;
 
             case 'Search for a song':
-                //TODO: Search for song
+                spotifyThisSong();
                 break;
 
             case 'Search for a movie':
@@ -43,6 +47,8 @@ inquire
     });
 
 //* Primary Functions
+
+// Concert This
 function concertThis() {
     inquire
         .prompt([
@@ -82,6 +88,55 @@ function concertThis() {
         });
 }
 
+// Spotify This Song
+function spotifyThisSong() {
+    inquire
+        .prompt([
+            {
+                message: 'What song would you like to know about?',
+                name: 'song',
+                type: 'input',
+            },
+        ])
+        .then((res) => {
+            const song = res.song === '' ? 'The Sign' : res.song;
+            spotify.search(
+                {
+                    type: 'track',
+                    query: song,
+                    limit: 1,
+                },
+                (err, data) => {
+                    if (err) {
+                        return console.error(err);
+                    }
+                    const results = data.tracks.items;
+
+                    results.forEach((searchRef) => {
+                        // Reference each value
+                        const songName = searchRef.name;
+                        const artists = [];
+                        const album = searchRef.album.name;
+                        const songPreview = searchRef.external_urls.spotify;
+
+                        // List all artists by name
+                        searchRef.artists.forEach((artist) => artists.push(artist.name));
+
+                        // Format data
+                        const songInfo = {};
+                        songInfo['Song'] = songName;
+                        songInfo['Artist(s)'] = artists.join(', ');
+                        songInfo['Album'] = album;
+                        songInfo['Listen Here'] = songPreview;
+
+                        // Display data
+                        console.table(songInfo);
+                    });
+                }
+            );
+        });
+}
+
 //* Helper Functions
 function titleCase(str) {
     const splitStr = str.toLowerCase().split(' ');
@@ -91,7 +146,3 @@ function titleCase(str) {
 
     return splitStr.join(' ');
 }
-
-// function showCard(show) {
-//     console.log(show.);
-// }
